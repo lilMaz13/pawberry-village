@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Pawberry Village</title>
+  <meta name="robots" content="noindex">
+  <meta name="description" content="A cosy puzzle village: 500 levels of paths, crates, bones, lights and picture puzzles.">
+  <meta name="theme-color" content="#FFF4DC">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Pawberry">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="TemplateData/icon-180.png">
+  <link rel="icon" type="image/png" href="TemplateData/favicon.png">
+  <link rel="preload" href="TemplateData/Fredoka-Bold.ttf" as="font" type="font/ttf" crossorigin>
+  <style>
+    @font-face { font-family: "Fredoka"; src: url("TemplateData/Fredoka-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+    :root { --cream: #FFF4DC; --cream-light: #FFFBF0; --ink: #5B3A29; --ink-soft: #8A6A55; --wood: #B87A4B; --wood-dark: #8A5A3B; --gold: #FFD45A; --gold-dark: #F2A51E; --berry: #E4577A; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: var(--cream); overscroll-behavior: none; touch-action: none;
+      -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+    body { position: fixed; inset: 0; font-family: "Fredoka", ui-rounded, system-ui, sans-serif; color: var(--ink);
+      background: radial-gradient(120% 80% at 50% 35%, var(--cream-light) 0%, var(--cream) 60%, #F6E2BC 100%); }
+
+    /* phone: the game fills the screen inside the notch / home-bar safe area */
+    #game { position: absolute; display: block; background: var(--cream); outline: none;
+      left: env(safe-area-inset-left, 0px); top: env(safe-area-inset-top, 0px);
+      width: calc(100% - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+      height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+    /* wide screens (desktop, tablets): a portrait 1:2 column in the middle */
+    @media (min-aspect-ratio: 2/3) {
+      #game { --h: min(calc(100vh - 32px), 1080px); height: var(--h); width: calc(var(--h) / 2); left: 50%; top: 50%;
+        transform: translate(-50%, -50%); border-radius: 22px; box-shadow: 0 24px 70px rgba(91, 58, 41, .22), 0 0 0 6px rgba(184, 122, 75, .18); }
+    }
+
+    #loader { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 18px; padding: 24px; background: inherit; transition: opacity .45s ease, visibility .45s; }
+    #loader.done { opacity: 0; visibility: hidden; }
+    #loader-icon { width: 124px; height: 124px; border-radius: 30px; box-shadow: 0 14px 30px rgba(91, 58, 41, .25), inset 0 0 0 1px rgba(255,255,255,.4);
+      animation: float 2.8s ease-in-out infinite; }
+    #loader h1 { margin: 6px 0 0; font-size: 34px; letter-spacing: .5px; font-weight: 700; text-shadow: 0 2px 0 rgba(255, 255, 255, .7); }
+    #bar { position: relative; width: min(240px, 70vw); height: 16px; border-radius: 99px; background: rgba(138, 90, 59, .18);
+      box-shadow: inset 0 2px 3px rgba(91, 58, 41, .25), 0 1px 0 rgba(255, 255, 255, .8); overflow: hidden; }
+    #fill { position: absolute; inset: 0 auto 0 0; width: 4%; border-radius: inherit; transition: width .25s ease-out;
+      background: linear-gradient(180deg, #FFE38A 0%, var(--gold) 45%, var(--gold-dark) 100%); box-shadow: inset 0 -2px 0 rgba(160, 90, 10, .25); }
+    #fill::after { content: ""; position: absolute; left: 6px; right: 6px; top: 3px; height: 4px; border-radius: 99px; background: rgba(255, 255, 255, .55); }
+    #status { margin: 0; min-height: 1.2em; font-size: 15px; color: var(--ink-soft); text-align: center; max-width: 300px; }
+    #retry { display: none; font: inherit; font-size: 17px; color: #fff; border: 0; border-radius: 99px; padding: 10px 26px; cursor: pointer;
+      background: linear-gradient(180deg, #F27A98, var(--berry)); box-shadow: 0 4px 0 #B83A5B; }
+    #loader.error #retry { display: block; }
+    #loader.error #bar { display: none; }
+    #install { position: absolute; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); width: max-content; max-width: calc(100% - 40px);
+      margin: 0; padding: 12px 18px; border-radius: 18px; font-size: 15px; line-height: 1.35; text-align: center; color: var(--ink);
+      background: rgba(255, 251, 240, .9); box-shadow: 0 6px 18px rgba(91, 58, 41, .15); }
+    #install svg { vertical-align: -3px; color: #2F7BF5; }
+
+    #rotate { display: none; position: fixed; inset: 0; z-index: 3; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+      background: var(--cream); font-size: 20px; text-align: center; }
+    #rotate div { width: 34px; height: 58px; border: 4px solid var(--ink); border-radius: 9px; animation: tilt 2.4s ease-in-out infinite; }
+    @media (orientation: landscape) and (max-height: 500px) { #rotate { display: flex; } }
+
+    @keyframes float { 50% { transform: translateY(-8px) rotate(-2deg); } }
+    @keyframes tilt { 0%, 30% { transform: rotate(-90deg); } 60%, 100% { transform: rotate(0); } }
+    @media (prefers-reduced-motion: reduce) { #loader-icon, #rotate div { animation: none; } }
+  </style>
+</head>
+<body>
+  <canvas id="game" width="540" height="1080" tabindex="-1"></canvas>
+
+  <div id="loader">
+    <img id="loader-icon" src="TemplateData/icon-192.png" alt="">
+    <h1>Pawberry Village</h1>
+    <div id="bar"><div id="fill"></div></div>
+    <p id="status">Loading…</p>
+    <button id="retry" type="button" onclick="location.reload()">Try again</button>
+    <p id="install" hidden>To play it like an app: tap
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-label="Share"><path d="M12 14V3M7.5 7.5 12 3l4.5 4.5M8.5 10H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <b>Share</b>, then <b>Add to Home Screen</b>.</p>
+  </div>
+
+  <div id="rotate"><div></div>Turn your phone upright to play</div>
+
+  <script>
+    var canvas = document.getElementById("game");
+    var loader = document.getElementById("loader");
+    var fill = document.getElementById("fill");
+    var statusText = document.getElementById("status");
+
+    var iOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    var installed = navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+    if (iOS && !installed) document.getElementById("install").hidden = false;
+
+    // Safari would zoom the page on a pinch or double tap; the game handles its own gestures
+    document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
+    document.addEventListener("dblclick", function (e) { e.preventDefault(); });
+
+    function fail(message) {
+      statusText.textContent = String(message || "Something went wrong.").replace(/<[^>]*>/g, "");
+      loader.classList.add("error");
+    }
+
+    var config = {
+      dataUrl: "Build/e0664b7e775f6767473fd3dcfae49ef7.data.unityweb",
+      frameworkUrl: "Build/2ea8edea29a4da6f679124413127ea11.framework.js.unityweb",
+      codeUrl: "Build/a46e8978e9a35d1fb1fd8af531185892.wasm.unityweb",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: "Pawberry Games",
+      productName: "Pawberry Village",
+      productVersion: "1.0.0",
+      // the save file lives in persistentDataPath (IndexedDB in a browser); write it through on every save
+      autoSyncPersistentDataPath: true,
+      // phones report 3x; 2x looks the same for this art and costs far less fill rate
+      devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+      showBanner: function (message, type) { if (type === "error") fail(message); else console.warn(message); },
+    };
+
+    var script = document.createElement("script");
+    script.src = "Build/e27010f913ab7202aecf5431503ba12d.loader.js";
+    script.onerror = function () { fail("Couldn't load the game. Check your connection and try again."); };
+    script.onload = function () {
+      createUnityInstance(canvas, config, function (p) {
+        fill.style.width = Math.max(4, Math.round(p * 100)) + "%";
+        statusText.textContent = p < 0.9 ? "Loading… " + Math.round(p * 100) + "%" : "Waking up the village…";
+      }).then(function () {
+        loader.classList.add("done");
+        setTimeout(function () { loader.remove(); }, 600);
+        canvas.focus();
+      }).catch(fail);
+    };
+
+    // offline play: start the service worker first, so the build is stored as it downloads (only once);
+    // after 3 s without it the game loads anyway and gets cached on the next visit
+    function offlineReady() {
+      if (!("serviceWorker" in navigator) || !window.isSecureContext) return Promise.resolve();
+      navigator.serviceWorker.register("ServiceWorker.js").catch(function () {});
+      if (navigator.serviceWorker.controller) return Promise.resolve();
+      return new Promise(function (done) {
+        navigator.serviceWorker.addEventListener("controllerchange", done);
+        setTimeout(done, 3000);
+      });
+    }
+    offlineReady().then(function () { document.body.appendChild(script); });
+  </script>
+</body>
+</html>

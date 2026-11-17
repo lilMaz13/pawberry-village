@@ -1,0 +1,15 @@
+{
+  "name": "Pawberry Village",
+  "short_name": "Pawberry",
+  "description": "A cosy puzzle village: 500 levels of paths, crates, bones, lights and picture puzzles.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF4DC",
+  "theme_color": "#FFF4DC",
+  "icons": [
+    { "src": "TemplateData/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "TemplateData/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
